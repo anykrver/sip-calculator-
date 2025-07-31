@@ -2,192 +2,164 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SIP Growth Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Investment Calculator</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    body {
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
       font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #74ebd5, #9face6);
+    }
+
+    body {
+      background: linear-gradient(to right, #667eea, #764ba2);
+      color: #fff;
       min-height: 100vh;
       display: flex;
-      justify-content: center;
-      padding: 40px 20px;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
     }
 
     .container {
-      background: rgba(255, 255, 255, 0.2);
-      backdrop-filter: blur(12px);
+      background-color: #1e1e2f;
       border-radius: 20px;
       padding: 30px;
-      width: 100%;
       max-width: 700px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #fff;
-    }
-
-    label {
-      margin-top: 15px;
-      display: block;
-      color: #fff;
-      font-weight: 500;
-    }
-
-    input, select {
       width: 100%;
-      padding: 10px;
-      margin-top: 6px;
-      font-size: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 28px;
+    }
+
+    .row {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .row input {
+      flex: 1;
+      padding: 12px;
       border-radius: 10px;
       border: none;
-      background: rgba(255,255,255,0.9);
+      outline: none;
+      font-size: 16px;
     }
 
-    button {
-      margin-top: 25px;
-      width: 100%;
-      padding: 12px;
-      background: #4CAF50;
-      color: white;
-      font-size: 18px;
+    .row label {
+      width: 30%;
+      font-weight: 600;
+      align-self: center;
+    }
+
+    .button {
+      background-color: #ff6a00;
+      padding: 12px 20px;
       border: none;
-      border-radius: 12px;
+      border-radius: 10px;
+      color: white;
+      font-weight: 600;
       cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+      font-size: 16px;
+      transition: background 0.3s;
     }
 
-    button:hover {
-      background: #43a047;
+    .button:hover {
+      background-color: #e65c00;
     }
 
-    #result {
-      margin-top: 20px;
-      background: rgba(255,255,255,0.95);
-      padding: 15px;
-      border-radius: 12px;
+    .result {
       text-align: center;
+      margin: 20px 0;
       font-size: 18px;
-      color: #333;
-    }
-
-    #chartContainer {
-      margin-top: 30px;
     }
 
     canvas {
-      background: white;
-      border-radius: 10px;
-      padding: 15px;
-      width: 100%;
+      margin-top: 30px;
     }
   </style>
 </head>
 <body>
-
   <div class="container">
-    <h2>📈 SIP Growth Calculator</h2>
-
-    <label for="amount">Monthly Investment (₹)</label>
-    <input type="number" id="amount" placeholder="e.g. 2000">
-
-    <label for="interest">Monthly Interest Rate (%)</label>
-    <input type="number" id="interest" placeholder="e.g. 1.2">
-
-    <label for="period">Investment Period</label>
-    <input type="number" id="period" placeholder="e.g. 12">
-    <select id="unit">
-      <option value="months">Months</option>
-      <option value="years">Years</option>
-    </select>
-
-    <button id="calcBtn">Calculate</button>
-
-    <div id="result"></div>
-
-    <div id="chartContainer">
-      <canvas id="growthChart" height="200"></canvas>
+    <h1>Investment Maturity Calculator</h1>
+    <div class="row">
+      <label for="amount">Monthly Investment (₹)</label>
+      <input type="number" id="amount" placeholder="e.g. 5000" />
     </div>
+    <div class="row">
+      <label for="interest">Monthly Interest Rate (%)</label>
+      <input type="number" id="interest" step="0.01" placeholder="e.g. 1.5" />
+    </div>
+    <div class="row">
+      <label for="period">Maturity Period (months)</label>
+      <input type="number" id="period" placeholder="e.g. 24" />
+    </div>
+    <button class="button" onclick="calculateMaturity()">Calculate</button>
+    <div class="result" id="result"></div>
+    <canvas id="chart" height="200"></canvas>
   </div>
 
   <script>
-    let chart;
+    function calculateMaturity() {
+      const amount = parseFloat(document.getElementById('amount').value);
+      const interestRate = parseFloat(document.getElementById('interest').value);
+      const months = parseInt(document.getElementById('period').value);
 
-    document.addEventListener("DOMContentLoaded", function () {
-      document.getElementById('calcBtn').addEventListener('click', () => {
-        const P = parseFloat(document.getElementById("amount").value);
-        const r = parseFloat(document.getElementById("interest").value) / 100;
-        let n = parseInt(document.getElementById("period").value);
-        const unit = document.getElementById("unit").value;
+      if (!amount || !interestRate || !months) {
+        alert("Please fill all fields correctly.");
+        return;
+      }
 
-        if (unit === "years") n *= 12;
+      let maturity = 0;
+      let monthlyInterest = interestRate / 100;
+      let dataPoints = [];
 
-        if (isNaN(P) || isNaN(r) || isNaN(n) || P <= 0 || r < 0 || n <= 0) {
-          document.getElementById("result").innerText = "❗ Please enter valid numbers.";
-          return;
-        }
+      for (let i = 1; i <= months; i++) {
+        maturity = (maturity + amount) * (1 + monthlyInterest);
+        dataPoints.push(maturity.toFixed(2));
+      }
 
-        let total = 0;
-        const valuesOverTime = [];
-        const labels = [];
+      document.getElementById("result").innerText = `Maturity Amount after ${months} months: ₹${maturity.toFixed(2)}`;
 
-        for (let i = 1; i <= n; i++) {
-          total = total * (1 + r) + P;
-          valuesOverTime.push(total.toFixed(2));
-          labels.push("Month " + i);
-        }
-
-        const maturity = total.toFixed(2);
-        const invested = (P * n).toFixed(2);
-        const interestEarned = (maturity - invested).toFixed(2);
-
-        document.getElementById("result").innerHTML = `
-          💵 <b>Maturity Amount:</b> ₹${maturity} <br/>
-          📊 <b>Total Deposit:</b> ₹${invested} <br/>
-          💹 <b>Interest Earned:</b> ₹${interestEarned}
-        `;
-
-        // Draw chart
-        if (chart) chart.destroy();
-
-        const ctx = document.getElementById('growthChart').getContext('2d');
-        chart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'Total Value (₹)',
-              data: valuesOverTime,
-              borderColor: '#4CAF50',
-              backgroundColor: 'rgba(76, 175, 80, 0.2)',
-              tension: 0.3,
-              fill: true,
-              pointRadius: 2
-            }]
+      const ctx = document.getElementById('chart').getContext('2d');
+      if (window.chartInstance) {
+        window.chartInstance.destroy();
+      }
+      window.chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: Array.from({ length: months }, (_, i) => `Month ${i + 1}`),
+          datasets: [{
+            label: 'Maturity Over Time',
+            data: dataPoints,
+            borderColor: '#ff6a00',
+            backgroundColor: 'rgba(255, 106, 0, 0.2)',
+            fill: true,
+            tension: 0.3,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: true }
           },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { position: 'top' },
-              tooltip: {
-                callbacks: {
-                  label: context => ₹${context.raw}
-                }
-              }
-            },
-            scales: {
-              x: { title: { display: true, text: 'Month' }},
-              y: { title: { display: true, text: 'Total Amount (₹)' }, beginAtZero: true }
-            }
+          scales: {
+            y: { beginAtZero: false },
+            x: { ticks: { autoSkip: true, maxTicksLimit: 12 } }
           }
-        });
+        }
       });
-    });
+    }
   </script>
-
 </body>
 </html>
