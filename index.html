@@ -13,7 +13,6 @@
       min-height: 100vh;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
       padding: 40px 20px;
     }
 
@@ -68,7 +67,7 @@
 
     #result {
       margin-top: 20px;
-      background: rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.95);
       padding: 15px;
       border-radius: 12px;
       text-align: center;
@@ -76,11 +75,15 @@
       color: #333;
     }
 
-    canvas {
+    #chartContainer {
       margin-top: 30px;
+    }
+
+    canvas {
       background: white;
       border-radius: 10px;
       padding: 15px;
+      width: 100%;
     }
   </style>
 </head>
@@ -106,17 +109,16 @@
 
     <div id="result"></div>
 
-    <canvas id="growthChart" height="200"></canvas>
+    <div id="chartContainer">
+      <canvas id="growthChart" height="200"></canvas>
+    </div>
   </div>
 
-  <!-- ✅ JS placed AFTER HTML to ensure it works -->
   <script>
     let chart;
 
     document.addEventListener("DOMContentLoaded", function () {
-      const calcBtn = document.getElementById('calcBtn');
-
-      calcBtn.addEventListener('click', () => {
+      document.getElementById('calcBtn').addEventListener('click', () => {
         const P = parseFloat(document.getElementById("amount").value);
         const r = parseFloat(document.getElementById("interest").value) / 100;
         let n = parseInt(document.getElementById("period").value);
@@ -131,23 +133,25 @@
 
         let total = 0;
         const valuesOverTime = [];
+        const labels = [];
+
         for (let i = 1; i <= n; i++) {
           total = total * (1 + r) + P;
           valuesOverTime.push(total.toFixed(2));
+          labels.push("Month " + i);
         }
 
         const maturity = total.toFixed(2);
-        const invested = P * n;
-        const interest = (total - invested).toFixed(2);
+        const invested = (P * n).toFixed(2);
+        const interestEarned = (maturity - invested).toFixed(2);
 
         document.getElementById("result").innerHTML = `
           💵 <b>Maturity Amount:</b> ₹${maturity} <br/>
-          📊 <b>Total Deposit:</b> ₹${invested.toFixed(2)} <br/>
-          💹 <b>Interest Earned:</b> ₹${interest}
+          📊 <b>Total Deposit:</b> ₹${invested} <br/>
+          💹 <b>Interest Earned:</b> ₹${interestEarned}
         `;
 
-        const labels = Array.from({ length: n }, (_, i) => Month ${i + 1});
-
+        // Draw chart
         if (chart) chart.destroy();
 
         const ctx = document.getElementById('growthChart').getContext('2d');
@@ -158,10 +162,10 @@
             datasets: [{
               label: 'Total Value (₹)',
               data: valuesOverTime,
-              fill: true,
               borderColor: '#4CAF50',
               backgroundColor: 'rgba(76, 175, 80, 0.2)',
               tension: 0.3,
+              fill: true,
               pointRadius: 2
             }]
           },
@@ -171,20 +175,13 @@
               legend: { position: 'top' },
               tooltip: {
                 callbacks: {
-                  label: function(context) {
-                    return ₹${context.raw};
-                  }
+                  label: context => ₹${context.raw}
                 }
               }
             },
             scales: {
-              x: {
-                title: { display: true, text: 'Month' }
-              },
-              y: {
-                title: { display: true, text: 'Total Amount (₹)' },
-                beginAtZero: true
-              }
+              x: { title: { display: true, text: 'Month' }},
+              y: { title: { display: true, text: 'Total Amount (₹)' }, beginAtZero: true }
             }
           }
         });
